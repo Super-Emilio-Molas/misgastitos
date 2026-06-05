@@ -50,4 +50,23 @@ void main() {
     expect(find.text('Configuracion'), findsOneWidget);
     expect(find.text('Acceso por biometria'), findsOneWidget);
   });
+
+  testWidgets('la tarjeta de saldo se adapta a pantallas angostas', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 780));
+    await tester.pumpWidget(const MisGastitosApp());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'luz');
+    await tester.enterText(find.byType(TextField).at(1), '123456');
+    await tester.tap(find.text('Entrar'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Ocultar saldo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gs. ******'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

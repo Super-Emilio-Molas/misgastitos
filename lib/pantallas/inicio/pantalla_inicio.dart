@@ -166,17 +166,22 @@ class _TarjetaSaldo extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compacto = constraints.maxWidth < 380;
-        final anchoPerrito = compacto ? 126.0 : 154.0;
+        final anchoTarjeta = constraints.maxWidth;
+        final compacto = anchoTarjeta < 380;
+        final anchoPerrito = (anchoTarjeta * 0.39).clamp(104.0, 158.0);
+        final espacioPerrito = (anchoPerrito * 0.72).clamp(76.0, 116.0);
+        final margenSuperior = (anchoPerrito * 0.24).clamp(25.0, 38.0);
+        final paddingSuperior = (anchoPerrito * 0.20).clamp(23.0, 32.0);
+        final posicionDerecha = (anchoTarjeta * 0.035).clamp(4.0, 14.0);
 
         return Stack(
           clipBehavior: Clip.none,
           children: [
             Container(
-              margin: EdgeInsets.only(top: compacto ? 30 : 36),
+              margin: EdgeInsets.only(top: margenSuperior),
               padding: EdgeInsets.fromLTRB(
-                18,
-                compacto ? 26 : 30,
+                compacto ? 16 : 18,
+                paddingSuperior,
                 compacto ? 12 : 16,
                 18,
               ),
@@ -269,13 +274,13 @@ class _TarjetaSaldo extends StatelessWidget {
                       ],
                     ),
                   ),
-                  SizedBox(width: compacto ? 94 : 112),
+                  SizedBox(width: espacioPerrito),
                 ],
               ),
             ),
             Positioned(
               top: 0,
-              right: compacto ? 6 : 12,
+              right: posicionDerecha,
               child: IgnorePointer(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),
