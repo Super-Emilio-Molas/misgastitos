@@ -179,6 +179,36 @@ class _TarjetaSaldo extends StatelessWidget {
         return Stack(
           clipBehavior: Clip.none,
           children: [
+            Positioned(
+              top: posicionSuperior,
+              right: posicionDerecha,
+              child: IgnorePointer(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 320),
+                  switchInCurve: Curves.easeOutBack,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) {
+                    final escala = Tween<double>(
+                      begin: 0.92,
+                      end: 1,
+                    ).animate(animation);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(scale: escala, child: child),
+                    );
+                  },
+                  child: Image.asset(
+                    saldoOculto
+                        ? 'images/perrito_tapando_los_ojos_sobre_panel_saldo_actual.png'
+                        : 'images/perrito_sobre_panel_saldo_actual.png',
+                    key: ValueKey(saldoOculto),
+                    width: anchoPerrito,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
+                  ),
+                ),
+              ),
+            ),
             Container(
               margin: EdgeInsets.only(top: margenSuperior),
               padding: EdgeInsets.fromLTRB(
@@ -278,36 +308,6 @@ class _TarjetaSaldo extends StatelessWidget {
                   ),
                   SizedBox(width: espacioPerrito),
                 ],
-              ),
-            ),
-            Positioned(
-              top: posicionSuperior,
-              right: posicionDerecha,
-              child: IgnorePointer(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 320),
-                  switchInCurve: Curves.easeOutBack,
-                  switchOutCurve: Curves.easeIn,
-                  transitionBuilder: (child, animation) {
-                    final escala = Tween<double>(
-                      begin: 0.92,
-                      end: 1,
-                    ).animate(animation);
-                    return FadeTransition(
-                      opacity: animation,
-                      child: ScaleTransition(scale: escala, child: child),
-                    );
-                  },
-                  child: Image.asset(
-                    saldoOculto
-                        ? 'images/perrito_tapando_los_ojos_sobre_panel_saldo_actual.png'
-                        : 'images/perrito_sobre_panel_saldo_actual.png',
-                    key: ValueKey(saldoOculto),
-                    width: anchoPerrito,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.medium,
-                  ),
-                ),
               ),
             ),
           ],
