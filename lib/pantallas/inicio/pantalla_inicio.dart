@@ -173,6 +173,10 @@ class _TarjetaSaldo extends StatelessWidget {
         final margenSuperior = (anchoPerrito * 0.42).clamp(42.0, 62.0);
         final paddingSuperior = compacto ? 18.0 : 20.0;
         final posicionDerecha = (anchoTarjeta * 0.035).clamp(4.0, 14.0);
+        final posicionSuperior = (margenSuperior - anchoPerrito * 0.6).clamp(
+          -26.0,
+          4.0,
+        );
 
         return Stack(
           clipBehavior: Clip.none,
@@ -279,11 +283,23 @@ class _TarjetaSaldo extends StatelessWidget {
               ),
             ),
             Positioned(
-              top: 2,
+              top: posicionSuperior,
               right: posicionDerecha,
               child: IgnorePointer(
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
+                  duration: const Duration(milliseconds: 320),
+                  switchInCurve: Curves.easeOutBack,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) {
+                    final escala = Tween<double>(
+                      begin: 0.92,
+                      end: 1,
+                    ).animate(animation);
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(scale: escala, child: child),
+                    );
+                  },
                   child: Image.asset(
                     saldoOculto
                         ? 'images/perrito_tapando_los_ojos_sobre_panel_saldo_actual.png'

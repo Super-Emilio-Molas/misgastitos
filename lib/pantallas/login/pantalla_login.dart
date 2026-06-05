@@ -110,16 +110,6 @@ class _PantallaLoginState extends State<PantallaLogin> {
                           alIngresar: _ingresar,
                           alBiometria: _ingresarConBiometria,
                         ),
-                        const SizedBox(height: 14),
-                        const Text(
-                          'Usuario de prueba: luz   Codigo: 123456',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: ColoresApp.textoSuave,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -140,7 +130,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
     if (!valido) {
       setState(() => _cargando = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuario o codigo incorrecto.')),
+        const SnackBar(content: Text('Usuario o contraseña incorrectos.')),
       );
       return;
     }
@@ -206,19 +196,21 @@ class _PanelLogin extends StatelessWidget {
           CampoSuave(
             controlador: usuario,
             etiqueta: 'Usuario',
-            pista: 'luz',
+            pista: 'Tu usuario',
             icono: Icons.person_outline,
           ),
           const SizedBox(height: 14),
           CampoSuave(
             controlador: codigo,
-            etiqueta: 'Codigo',
-            pista: '123456',
+            etiqueta: 'Contraseña',
+            pista: 'Tu contraseña',
             icono: Icons.lock_outline,
             teclado: TextInputType.number,
             esSecreto: !mostrarCodigo,
             accion: IconButton(
-              tooltip: mostrarCodigo ? 'Ocultar codigo' : 'Mostrar codigo',
+              tooltip: mostrarCodigo
+                  ? 'Ocultar contraseña'
+                  : 'Mostrar contraseña',
               onPressed: alAlternarCodigo,
               icon: Icon(
                 mostrarCodigo

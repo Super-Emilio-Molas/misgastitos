@@ -17,6 +17,7 @@ void main() {
 
     expect(find.text('Mis gastitos'), findsWidgets);
     expect(find.text('Entrar'), findsOneWidget);
+    expect(find.textContaining('Usuario de prueba'), findsNothing);
 
     await tester.enterText(find.byType(TextField).at(0), 'luz');
     await tester.enterText(find.byType(TextField).at(1), '123456');

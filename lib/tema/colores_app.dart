@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ColoresApp {
-  static const fondo = Color(0xFFFFFBF6);
-  static const crema = Color(0xFFFFF1DF);
+  static const fondo = Color(0xFFFFF1DF);
+  static const crema = Color(0xFFFFE9CA);
   static const cremaClaro = Color(0xFFFFF7EC);
   static const verde = Color(0xFF6B9258);
   static const verdeOscuro = Color(0xFF436B39);
