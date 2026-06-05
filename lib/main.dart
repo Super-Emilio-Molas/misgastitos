@@ -169,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.fromLTRB(28, 28, 28, 36),
               children: [
                 const SizedBox(height: 48),
-                const Center(child: DogLogo(size: 190, showText: false)),
+                const Center(child: AppLogo(size: 190)),
                 const SizedBox(height: 20),
                 Text(
                   'Mis gastitos',
@@ -724,7 +724,7 @@ class MorePage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
       children: [
-        const Center(child: DogLogo(size: 150, showText: true)),
+        const Center(child: AppLogo(size: 170)),
         const SizedBox(height: 26),
         SoftCard(
           child: Column(
@@ -1286,6 +1286,29 @@ class _EntrySheetState extends State<EntrySheet> {
         amount: amount,
         date: DateTime.now(),
         kind: _kind,
+      ),
+    );
+  }
+}
+
+class AppLogo extends StatelessWidget {
+  const AppLogo({super.key, required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Image.asset(
+        'images/logo_app.jpeg',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (context, error, stackTrace) {
+          return DogLogo(size: size, showText: true);
+        },
       ),
     );
   }
