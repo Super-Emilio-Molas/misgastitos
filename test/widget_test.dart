@@ -1,48 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:misgastitos/main.dart';
+import 'package:misgastitos/aplicacion/mis_gastitos_app.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('shows login and opens dashboard', (WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const Size(430, 1400));
-    await tester.pumpWidget(const MisGastitosApp());
-
-    expect(find.text('Mis gastitos'), findsWidgets);
-    expect(find.text('Iniciar sesión'), findsOneWidget);
-
-    await tester.tap(find.text('Iniciar sesión'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Hola Luz Valeria 👋'), findsOneWidget);
-    expect(find.text('Resumen de este mes'), findsOneWidget);
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('adds a new expense', (WidgetTester tester) async {
-    await tester.binding.setSurfaceSize(const Size(430, 1400));
+  testWidgets('muestra login y entra con usuario de prueba', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
     await tester.pumpWidget(const MisGastitosApp());
-    await tester.tap(find.text('Iniciar sesión'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Nuevo gasto'));
+    expect(find.text('Mis gastitos'), findsWidgets);
+    expect(find.text('Entrar'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).at(0), 'luz');
+    await tester.enterText(find.byType(TextField).at(1), '123456');
+    await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nuevo movimiento'), findsOneWidget);
-    await tester.enterText(
-      find.byKey(const ValueKey('entry-title-field')),
-      'Café',
-    );
-    await tester.enterText(
-      find.byKey(const ValueKey('entry-amount-field')),
-      '12000',
-    );
-    await tester.ensureVisible(find.byKey(const ValueKey('save-entry-button')));
-    await tester.tap(find.byKey(const ValueKey('save-entry-button')));
+    expect(find.text('Hola Luz Valeria'), findsOneWidget);
+    expect(find.text('Resumen pastel'), findsOneWidget);
+  });
+
+  testWidgets('permite abrir configuracion desde el menu inferior', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(const MisGastitosApp());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Gastos'));
+    await tester.enterText(find.byType(TextField).at(0), 'luz');
+    await tester.enterText(find.byType(TextField).at(1), '123456');
+    await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Café'), findsOneWidget);
-    expect(find.text('-Gs. 12.000'), findsOneWidget);
+    await tester.tap(find.text('Config'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Configuracion'), findsOneWidget);
+    expect(find.text('Acceso por biometria'), findsOneWidget);
   });
 }
