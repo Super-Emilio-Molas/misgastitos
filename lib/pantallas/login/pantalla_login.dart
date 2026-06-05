@@ -26,9 +26,9 @@ class PantallaLogin extends StatefulWidget {
 
 class _PantallaLoginState extends State<PantallaLogin> {
   late final TextEditingController _usuario;
-  final _codigo = TextEditingController();
+  final _contrasena = TextEditingController();
   late bool _recordarme;
-  bool _mostrarCodigo = false;
+  bool _mostrarContrasena = false;
   bool _cargando = false;
 
   @override
@@ -41,7 +41,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
   @override
   void dispose() {
     _usuario.dispose();
-    _codigo.dispose();
+    _contrasena.dispose();
     super.dispose();
   }
 
@@ -97,15 +97,17 @@ class _PantallaLoginState extends State<PantallaLogin> {
                         SizedBox(height: compacto ? 18 : 28),
                         _PanelLogin(
                           usuario: _usuario,
-                          codigo: _codigo,
+                          contrasena: _contrasena,
                           recordarme: _recordarme,
-                          mostrarCodigo: _mostrarCodigo,
+                          mostrarContrasena: _mostrarContrasena,
                           cargando: _cargando,
                           alCambiarRecordarme: (valor) {
                             setState(() => _recordarme = valor);
                           },
-                          alAlternarCodigo: () {
-                            setState(() => _mostrarCodigo = !_mostrarCodigo);
+                          alAlternarContrasena: () {
+                            setState(
+                              () => _mostrarContrasena = !_mostrarContrasena,
+                            );
                           },
                           alIngresar: _ingresar,
                           alBiometria: _ingresarConBiometria,
@@ -126,7 +128,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
     if (_cargando) return;
     setState(() => _cargando = true);
 
-    final valido = UsuarioPrueba.validar(_usuario.text, _codigo.text);
+    final valido = UsuarioPrueba.validar(_usuario.text, _contrasena.text);
     if (!valido) {
       setState(() => _cargando = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -154,23 +156,23 @@ class _PantallaLoginState extends State<PantallaLogin> {
 class _PanelLogin extends StatelessWidget {
   const _PanelLogin({
     required this.usuario,
-    required this.codigo,
+    required this.contrasena,
     required this.recordarme,
-    required this.mostrarCodigo,
+    required this.mostrarContrasena,
     required this.cargando,
     required this.alCambiarRecordarme,
-    required this.alAlternarCodigo,
+    required this.alAlternarContrasena,
     required this.alIngresar,
     required this.alBiometria,
   });
 
   final TextEditingController usuario;
-  final TextEditingController codigo;
+  final TextEditingController contrasena;
   final bool recordarme;
-  final bool mostrarCodigo;
+  final bool mostrarContrasena;
   final bool cargando;
   final ValueChanged<bool> alCambiarRecordarme;
-  final VoidCallback alAlternarCodigo;
+  final VoidCallback alAlternarContrasena;
   final VoidCallback alIngresar;
   final VoidCallback alBiometria;
 
@@ -201,19 +203,19 @@ class _PanelLogin extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           CampoSuave(
-            controlador: codigo,
+            controlador: contrasena,
             etiqueta: 'Contraseña',
             pista: 'Tu contraseña',
             icono: Icons.lock_outline,
-            teclado: TextInputType.number,
-            esSecreto: !mostrarCodigo,
+            teclado: TextInputType.visiblePassword,
+            esSecreto: !mostrarContrasena,
             accion: IconButton(
-              tooltip: mostrarCodigo
+              tooltip: mostrarContrasena
                   ? 'Ocultar contraseña'
                   : 'Mostrar contraseña',
-              onPressed: alAlternarCodigo,
+              onPressed: alAlternarContrasena,
               icon: Icon(
-                mostrarCodigo
+                mostrarContrasena
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
                 color: ColoresApp.verde,

@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../../datos/datos_financieros_prueba.dart';
+import '../../datos/catalogo_financiero.dart';
 import '../../modelos/movimiento.dart';
 import '../configuracion/pantalla_configuracion.dart';
 import 'pantalla_inicio.dart';
 
 class PantallaPrincipal extends StatefulWidget {
-  const PantallaPrincipal({super.key, required this.alCerrarSesion});
+  const PantallaPrincipal({
+    super.key,
+    required this.usuario,
+    required this.alCerrarSesion,
+  });
 
+  final String usuario;
   final VoidCallback alCerrarSesion;
 
   @override
@@ -30,30 +35,38 @@ class _PantallaPrincipalState extends State<PantallaPrincipal> {
   Widget build(BuildContext context) {
     final paginas = [
       PantallaInicio(
+        usuario: widget.usuario,
         movimientos: _movimientos,
         entradas: _entradas,
         gastos: _gastos,
+        alCerrarSesion: widget.alCerrarSesion,
       ),
       PantallaConfig(alCerrarSesion: widget.alCerrarSesion),
     ];
 
-    return Scaffold(
-      body: SafeArea(child: paginas[_indice]),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _indice,
-        onDestinationSelected: (valor) => setState(() => _indice = valor),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.tune_outlined),
-            selectedIcon: Icon(Icons.tune),
-            label: 'Config',
-          ),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) widget.alCerrarSesion();
+      },
+      child: Scaffold(
+        body: SafeArea(child: paginas[_indice]),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _indice,
+          onDestinationSelected: (valor) => setState(() => _indice = valor),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Inicio',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.tune_outlined),
+              selectedIcon: Icon(Icons.tune),
+              label: 'Config',
+            ),
+          ],
+        ),
       ),
     );
   }

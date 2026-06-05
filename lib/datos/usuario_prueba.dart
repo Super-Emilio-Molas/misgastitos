@@ -1,10 +1,9 @@
 class UsuarioPrueba {
-  static const nombreVisible = 'Luz Valeria';
   static const usuario = 'luz';
-  static const codigo = '123456';
+  static const contrasena = '123456';
 
-  static bool validar(String usuarioIngresado, String codigoIngresado) {
+  static bool validar(String usuarioIngresado, String contrasenaIngresada) {
     return usuarioIngresado.trim().toLowerCase() == usuario &&
-        codigoIngresado.trim() == codigo;
+        contrasenaIngresada.trim() == contrasena;
   }
 }

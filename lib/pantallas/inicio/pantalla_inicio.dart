@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import '../../componentes/formato_dinero.dart';
 import '../../componentes/fondo_huellitas.dart';
 import '../../componentes/tarjeta_suave.dart';
-import '../../datos/datos_financieros_prueba.dart';
-import '../../datos/usuario_prueba.dart';
+import '../../datos/catalogo_financiero.dart';
 import '../../modelos/categoria_gasto.dart';
 import '../../modelos/movimiento.dart';
 import '../../tema/colores_app.dart';
@@ -14,14 +13,18 @@ import '../../tema/colores_app.dart';
 class PantallaInicio extends StatefulWidget {
   const PantallaInicio({
     super.key,
+    required this.usuario,
     required this.movimientos,
     required this.entradas,
     required this.gastos,
+    required this.alCerrarSesion,
   });
 
+  final String usuario;
   final List<Movimiento> movimientos;
   final int entradas;
   final int gastos;
+  final VoidCallback alCerrarSesion;
 
   int get saldo => entradas - gastos;
 
@@ -48,10 +51,10 @@ class _PantallaInicioState extends State<PantallaInicio> {
               24,
             ),
             children: [
-              const _BarraSuperior(),
+              _BarraSuperior(alCerrarSesion: widget.alCerrarSesion),
               const SizedBox(height: 16),
               Text(
-                'Hola ${UsuarioPrueba.nombreVisible}',
+                'Hola ${_nombreMostrable(widget.usuario)}',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: ColoresApp.tinta,
                   fontSize: ancho < 380 ? 25 : 30,
@@ -79,7 +82,12 @@ class _PantallaInicioState extends State<PantallaInicio> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(child: _TarjetaResumen(gastos: widget.gastos)),
+                    Expanded(
+                      child: _TarjetaResumen(
+                        gastos: widget.gastos,
+                        movimientos: widget.movimientos,
+                      ),
+                    ),
                   ],
                 )
               else ...[
@@ -89,33 +97,17 @@ class _PantallaInicioState extends State<PantallaInicio> {
                   alAlternarSaldo: _alternarSaldo,
                 ),
                 const SizedBox(height: 16),
-                _TarjetaResumen(gastos: widget.gastos),
+                _TarjetaResumen(
+                  gastos: widget.gastos,
+                  movimientos: widget.movimientos,
+                ),
               ],
               const SizedBox(height: 18),
               _AccionesRapidas(ancho: ancho),
               const SizedBox(height: 22),
               _TituloSeccion(titulo: 'Ultimos movimientos'),
               const SizedBox(height: 12),
-              TarjetaSuave(
-                padding: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    for (
-                      var i = 0;
-                      i < widget.movimientos.take(4).length;
-                      i++
-                    ) ...[
-                      _FilaMovimiento(movimiento: widget.movimientos[i]),
-                      if (i < widget.movimientos.take(4).length - 1)
-                        const Divider(
-                          height: 1,
-                          indent: 76,
-                          color: ColoresApp.linea,
-                        ),
-                    ],
-                  ],
-                ),
-              ),
+              _ListaMovimientos(movimientos: widget.movimientos),
             ],
           );
         },
@@ -126,19 +118,27 @@ class _PantallaInicioState extends State<PantallaInicio> {
   void _alternarSaldo() {
     setState(() => _saldoOculto = !_saldoOculto);
   }
+
+  String _nombreMostrable(String usuario) {
+    final limpio = usuario.trim();
+    if (limpio.isEmpty) return 'usuario';
+    return limpio[0].toUpperCase() + limpio.substring(1);
+  }
 }
 
 class _BarraSuperior extends StatelessWidget {
-  const _BarraSuperior();
+  const _BarraSuperior({required this.alCerrarSesion});
+
+  final VoidCallback alCerrarSesion;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         IconButton.filledTonal(
-          tooltip: 'Menu',
-          onPressed: () {},
-          icon: const Icon(Icons.menu),
+          tooltip: 'Salir',
+          onPressed: alCerrarSesion,
+          icon: const Icon(Icons.logout),
         ),
         const Spacer(),
         IconButton.filledTonal(
@@ -168,15 +168,13 @@ class _TarjetaSaldo extends StatelessWidget {
       builder: (context, constraints) {
         final anchoTarjeta = constraints.maxWidth;
         final compacto = anchoTarjeta < 380;
-        final anchoPerrito = (anchoTarjeta * 0.37).clamp(104.0, 150.0);
-        final espacioPerrito = (anchoPerrito * 0.42).clamp(46.0, 68.0);
-        final margenSuperior = (anchoPerrito * 0.42).clamp(42.0, 62.0);
+        final anchoPerrito = (anchoTarjeta * 0.34).clamp(96.0, 136.0);
+        final altoPerrito = anchoPerrito * 0.72;
+        final espacioPerrito = (anchoPerrito * 0.36).clamp(38.0, 56.0);
+        final margenSuperior = (altoPerrito - 6).clamp(58.0, 92.0);
         final paddingSuperior = compacto ? 18.0 : 20.0;
         final posicionDerecha = (anchoTarjeta * 0.035).clamp(4.0, 14.0);
-        final posicionSuperior = (margenSuperior - anchoPerrito * 0.6).clamp(
-          -26.0,
-          4.0,
-        );
+        final posicionSuperior = margenSuperior - altoPerrito + 6;
 
         return Stack(
           clipBehavior: Clip.none,
@@ -320,9 +318,10 @@ class _TarjetaSaldo extends StatelessWidget {
 }
 
 class _TarjetaResumen extends StatelessWidget {
-  const _TarjetaResumen({required this.gastos});
+  const _TarjetaResumen({required this.gastos, required this.movimientos});
 
   final int gastos;
+  final List<Movimiento> movimientos;
 
   @override
   Widget build(BuildContext context) {
@@ -367,7 +366,7 @@ class _TarjetaResumen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ...categoriasGasto.take(3).map((categoria) {
-            final monto = _gastadoPorCategoria(categoria.nombre);
+            final monto = _gastadoPorCategoria(categoria.nombre, movimientos);
             return _FilaCategoria(categoria: categoria, monto: monto);
           }),
         ],
@@ -375,13 +374,14 @@ class _TarjetaResumen extends StatelessWidget {
     );
   }
 
-  int _gastadoPorCategoria(String nombre) {
-    final semillas = {
-      'Alimentacion': 80000,
-      'Hogar': 50000,
-      'Transporte': 40000,
-    };
-    return semillas[nombre] ?? 0;
+  int _gastadoPorCategoria(String nombre, List<Movimiento> movimientos) {
+    return movimientos
+        .where(
+          (movimiento) =>
+              movimiento.tipo == TipoMovimiento.gasto &&
+              movimiento.categoria == nombre,
+        )
+        .fold(0, (total, movimiento) => total + movimiento.monto);
   }
 }
 
@@ -470,6 +470,51 @@ class _AccionPastel extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ListaMovimientos extends StatelessWidget {
+  const _ListaMovimientos({required this.movimientos});
+
+  final List<Movimiento> movimientos;
+
+  @override
+  Widget build(BuildContext context) {
+    if (movimientos.isEmpty) {
+      return const TarjetaSuave(
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: ColoresApp.verdeSuave,
+              child: Icon(Icons.pets, color: ColoresApp.verde),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Todavia no hay movimientos.',
+                style: TextStyle(
+                  color: ColoresApp.textoSuave,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return TarjetaSuave(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          for (var i = 0; i < movimientos.take(4).length; i++) ...[
+            _FilaMovimiento(movimiento: movimientos[i]),
+            if (i < movimientos.take(4).length - 1)
+              const Divider(height: 1, indent: 76, color: ColoresApp.linea),
+          ],
+        ],
       ),
     );
   }
@@ -599,6 +644,13 @@ class _PintorDona extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = trazo;
+
+    if (gastos <= 0) {
+      paint.color = ColoresApp.linea.withValues(alpha: 0.7);
+      canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, paint);
+      return;
+    }
+
     final colores = [
       ColoresApp.verde,
       ColoresApp.durazno,

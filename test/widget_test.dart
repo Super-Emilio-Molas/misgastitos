@@ -24,8 +24,13 @@ void main() {
     await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Hola Luz Valeria'), findsOneWidget);
+    expect(find.text('Hola Luz'), findsOneWidget);
     expect(find.text('Resumen pastel'), findsOneWidget);
+    expect(find.text('Gs. 0'), findsWidgets);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    expect(find.text('Todavia no hay movimientos.'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Ocultar saldo'));
     await tester.pumpAndSettle();
@@ -50,6 +55,40 @@ void main() {
 
     expect(find.text('Configuracion'), findsOneWidget);
     expect(find.text('Acceso por biometria'), findsOneWidget);
+  });
+
+  testWidgets('el boton salir vuelve al login', (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(const MisGastitosApp());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'luz');
+    await tester.enterText(find.byType(TextField).at(1), '123456');
+    await tester.tap(find.text('Entrar'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Salir'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mis gastitos'), findsWidgets);
+    expect(find.text('Entrar'), findsOneWidget);
+  });
+
+  testWidgets('el gesto atras cierra la sesion', (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(const MisGastitosApp());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'luz');
+    await tester.enterText(find.byType(TextField).at(1), '123456');
+    await tester.tap(find.text('Entrar'));
+    await tester.pumpAndSettle();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mis gastitos'), findsWidgets);
+    expect(find.text('Entrar'), findsOneWidget);
   });
 
   testWidgets('la tarjeta de saldo se adapta a pantallas angostas', (

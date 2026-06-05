@@ -20,6 +20,7 @@ class _ControladorSesionState extends State<ControladorSesion> {
   bool _sesionIniciada = false;
   bool _recordarme = false;
   String _usuarioRecordado = '';
+  String _usuarioActual = '';
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _ControladorSesionState extends State<ControladorSesion> {
 
     if (_sesionIniciada) {
       return PantallaPrincipal(
+        usuario: _usuarioActual,
         alCerrarSesion: () => setState(() => _sesionIniciada = false),
       );
     }
@@ -63,6 +65,7 @@ class _ControladorSesionState extends State<ControladorSesion> {
         setState(() {
           _recordarme = recordarme;
           _usuarioRecordado = recordarme ? usuario : '';
+          _usuarioActual = usuario;
           _sesionIniciada = true;
         });
       },
@@ -70,7 +73,12 @@ class _ControladorSesionState extends State<ControladorSesion> {
         final biometriaActiva = await _preferencias.obtenerBiometriaActiva();
         if (!biometriaActiva) return false;
         final ok = await _biometria.autenticar();
-        if (ok && mounted) setState(() => _sesionIniciada = true);
+        if (ok && mounted) {
+          setState(() {
+            _usuarioActual = _usuarioRecordado;
+            _sesionIniciada = true;
+          });
+        }
         return ok;
       },
     );
