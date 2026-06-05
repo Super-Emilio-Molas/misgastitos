@@ -25,6 +25,11 @@ void main() {
 
     expect(find.text('Hola Luz Valeria'), findsOneWidget);
     expect(find.text('Resumen pastel'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Ocultar saldo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gs. ******'), findsOneWidget);
   });
 
   testWidgets('permite abrir configuracion desde el menu inferior', (

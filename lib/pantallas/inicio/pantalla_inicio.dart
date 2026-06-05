@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../componentes/formato_dinero.dart';
 import '../../componentes/fondo_huellitas.dart';
-import '../../componentes/perrito_dibujado.dart';
 import '../../componentes/tarjeta_suave.dart';
 import '../../datos/datos_financieros_prueba.dart';
 import '../../datos/usuario_prueba.dart';
@@ -12,7 +11,7 @@ import '../../modelos/categoria_gasto.dart';
 import '../../modelos/movimiento.dart';
 import '../../tema/colores_app.dart';
 
-class PantallaInicio extends StatelessWidget {
+class PantallaInicio extends StatefulWidget {
   const PantallaInicio({
     super.key,
     required this.movimientos,
@@ -25,6 +24,13 @@ class PantallaInicio extends StatelessWidget {
   final int gastos;
 
   int get saldo => entradas - gastos;
+
+  @override
+  State<PantallaInicio> createState() => _PantallaInicioState();
+}
+
+class _PantallaInicioState extends State<PantallaInicio> {
+  bool _saldoOculto = false;
 
   @override
   Widget build(BuildContext context) {
@@ -65,15 +71,25 @@ class PantallaInicio extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _TarjetaSaldo(saldo: saldo)),
+                    Expanded(
+                      child: _TarjetaSaldo(
+                        saldo: widget.saldo,
+                        saldoOculto: _saldoOculto,
+                        alAlternarSaldo: _alternarSaldo,
+                      ),
+                    ),
                     const SizedBox(width: 16),
-                    Expanded(child: _TarjetaResumen(gastos: gastos)),
+                    Expanded(child: _TarjetaResumen(gastos: widget.gastos)),
                   ],
                 )
               else ...[
-                _TarjetaSaldo(saldo: saldo),
+                _TarjetaSaldo(
+                  saldo: widget.saldo,
+                  saldoOculto: _saldoOculto,
+                  alAlternarSaldo: _alternarSaldo,
+                ),
                 const SizedBox(height: 16),
-                _TarjetaResumen(gastos: gastos),
+                _TarjetaResumen(gastos: widget.gastos),
               ],
               const SizedBox(height: 18),
               _AccionesRapidas(ancho: ancho),
@@ -84,9 +100,13 @@ class PantallaInicio extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
-                    for (var i = 0; i < movimientos.take(4).length; i++) ...[
-                      _FilaMovimiento(movimiento: movimientos[i]),
-                      if (i < movimientos.take(4).length - 1)
+                    for (
+                      var i = 0;
+                      i < widget.movimientos.take(4).length;
+                      i++
+                    ) ...[
+                      _FilaMovimiento(movimiento: widget.movimientos[i]),
+                      if (i < widget.movimientos.take(4).length - 1)
                         const Divider(
                           height: 1,
                           indent: 76,
@@ -101,6 +121,10 @@ class PantallaInicio extends StatelessWidget {
         },
       ),
     );
+  }
+
+  void _alternarSaldo() {
+    setState(() => _saldoOculto = !_saldoOculto);
   }
 }
 
@@ -128,84 +152,148 @@ class _BarraSuperior extends StatelessWidget {
 }
 
 class _TarjetaSaldo extends StatelessWidget {
-  const _TarjetaSaldo({required this.saldo});
+  const _TarjetaSaldo({
+    required this.saldo,
+    required this.saldoOculto,
+    required this.alAlternarSaldo,
+  });
 
   final int saldo;
+  final bool saldoOculto;
+  final VoidCallback alAlternarSaldo;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 14, 18),
-      decoration: BoxDecoration(
-        color: ColoresApp.crema,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: ColoresApp.linea),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Saldo actual',
-                  style: TextStyle(
-                    color: ColoresApp.textoSuave,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    formatoGuaranies(saldo),
-                    style: const TextStyle(
-                      color: ColoresApp.tinta,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.savings_outlined,
-                        color: ColoresApp.verde,
-                        size: 18,
-                      ),
-                      SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          'Buen ritmo este mes',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compacto = constraints.maxWidth < 380;
+        final anchoPerrito = compacto ? 126.0 : 154.0;
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              margin: EdgeInsets.only(top: compacto ? 30 : 36),
+              padding: EdgeInsets.fromLTRB(
+                18,
+                compacto ? 26 : 30,
+                compacto ? 12 : 16,
+                18,
+              ),
+              decoration: BoxDecoration(
+                color: ColoresApp.crema,
+                borderRadius: BorderRadius.circular(26),
+                border: Border.all(color: ColoresApp.linea),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Saldo actual',
                           style: TextStyle(
-                            color: ColoresApp.verdeOscuro,
+                            color: ColoresApp.textoSuave,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 220),
+                                  child: Text(
+                                    saldoOculto
+                                        ? 'Gs. ******'
+                                        : formatoGuaranies(saldo),
+                                    key: ValueKey(saldoOculto),
+                                    style: const TextStyle(
+                                      color: ColoresApp.tinta,
+                                      fontSize: 34,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            IconButton.filledTonal(
+                              tooltip: saldoOculto
+                                  ? 'Mostrar saldo'
+                                  : 'Ocultar saldo',
+                              onPressed: alAlternarSaldo,
+                              icon: Icon(
+                                saldoOculto
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.savings_outlined,
+                                color: ColoresApp.verde,
+                                size: 18,
+                              ),
+                              SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Buen ritmo este mes',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: ColoresApp.verdeOscuro,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: compacto ? 94 : 112),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 0,
+              right: compacto ? 6 : 12,
+              child: IgnorePointer(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: Image.asset(
+                    saldoOculto
+                        ? 'images/perrito_tapando_los_ojos_sobre_panel_saldo_actual.png'
+                        : 'images/perrito_sobre_panel_saldo_actual.png',
+                    key: ValueKey(saldoOculto),
+                    width: anchoPerrito,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.medium,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          const PerritoDibujado(tamano: 128),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }
