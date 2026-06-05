@@ -13,7 +13,7 @@ class LogoApp extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: Image.asset(
-        'images/logo_aplicacion_caja_de_aplicaciones.jpeg',
+        'images/logo_app.jpeg',
         width: tamano,
         height: tamano,
         fit: BoxFit.cover,

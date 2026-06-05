@@ -168,10 +168,10 @@ class _TarjetaSaldo extends StatelessWidget {
       builder: (context, constraints) {
         final anchoTarjeta = constraints.maxWidth;
         final compacto = anchoTarjeta < 380;
-        final anchoPerrito = (anchoTarjeta * 0.39).clamp(104.0, 158.0);
-        final espacioPerrito = (anchoPerrito * 0.72).clamp(76.0, 116.0);
-        final margenSuperior = (anchoPerrito * 0.24).clamp(25.0, 38.0);
-        final paddingSuperior = (anchoPerrito * 0.20).clamp(23.0, 32.0);
+        final anchoPerrito = (anchoTarjeta * 0.37).clamp(104.0, 150.0);
+        final espacioPerrito = (anchoPerrito * 0.42).clamp(46.0, 68.0);
+        final margenSuperior = (anchoPerrito * 0.42).clamp(42.0, 62.0);
+        final paddingSuperior = compacto ? 18.0 : 20.0;
         final posicionDerecha = (anchoTarjeta * 0.035).clamp(4.0, 14.0);
 
         return Stack(
@@ -279,7 +279,7 @@ class _TarjetaSaldo extends StatelessWidget {
               ),
             ),
             Positioned(
-              top: 0,
+              top: 2,
               right: posicionDerecha,
               child: IgnorePointer(
                 child: AnimatedSwitcher(
