@@ -44,3 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/.kotlin/
+
+# Configuracion local de Firebase. Cada persona debe generar sus propios
+# archivos con FlutterFire para no publicar datos del proyecto.
+/android/app/google-services.json
+/lib/firebase_options.dart
+/firebase.json

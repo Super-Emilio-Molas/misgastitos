@@ -3,14 +3,20 @@ import 'package:flutter/material.dart';
 import '../../componentes/fondo_huellitas.dart';
 import '../../componentes/logo_app.dart';
 import '../../componentes/tarjeta_suave.dart';
+import '../../modelos/usuario_sesion.dart';
 import '../../servicios/preferencias_sesion.dart';
 import '../../servicios/servicio_biometria.dart';
 import '../../tema/colores_app.dart';
 
 class PantallaConfig extends StatefulWidget {
-  const PantallaConfig({super.key, required this.alCerrarSesion});
+  const PantallaConfig({
+    super.key,
+    required this.usuario,
+    required this.alCerrarSesion,
+  });
 
-  final VoidCallback alCerrarSesion;
+  final UsuarioSesion usuario;
+  final Future<void> Function() alCerrarSesion;
 
   @override
   State<PantallaConfig> createState() => _PantallaConfigState();
@@ -21,6 +27,7 @@ class _PantallaConfigState extends State<PantallaConfig> {
   final _biometria = ServicioBiometria();
 
   bool _biometriaActiva = false;
+  bool _codigoActivo = false;
   bool _cargando = true;
 
   @override
@@ -31,9 +38,13 @@ class _PantallaConfigState extends State<PantallaConfig> {
 
   Future<void> _cargar() async {
     final activa = await _preferencias.obtenerBiometriaActiva();
+    final codigo = await _preferencias.obtenerCodigoRapido(
+      usuario: widget.usuario.usuario,
+    );
     if (!mounted) return;
     setState(() {
       _biometriaActiva = activa;
+      _codigoActivo = codigo.isNotEmpty;
       _cargando = false;
     });
   }
@@ -75,6 +86,19 @@ class _PantallaConfigState extends State<PantallaConfig> {
                 ),
                 const Divider(color: ColoresApp.linea),
                 _FilaConfig(
+                  icono: Icons.pin_outlined,
+                  titulo: 'Codigo de 4 digitos',
+                  subtitulo: _codigoActivo
+                      ? 'Activo solo para ${widget.usuario.nombre}.'
+                      : 'Crea un PIN solo para esta cuenta.',
+                  trailing: Switch(
+                    value: _codigoActivo,
+                    activeThumbColor: ColoresApp.verde,
+                    onChanged: _cambiarCodigo,
+                  ),
+                ),
+                const Divider(color: ColoresApp.linea),
+                _FilaConfig(
                   icono: Icons.pets,
                   titulo: 'Modo cute',
                   subtitulo: 'Huellitas y colores pastel activados.',
@@ -87,9 +111,11 @@ class _PantallaConfigState extends State<PantallaConfig> {
                 _FilaConfig(
                   icono: Icons.logout,
                   titulo: 'Cerrar sesion',
-                  subtitulo: 'Volver al login de prueba.',
+                  subtitulo: 'Volver al login.',
                   trailing: const Icon(Icons.chevron_right),
-                  alTocar: widget.alCerrarSesion,
+                  alTocar: () {
+                    widget.alCerrarSesion();
+                  },
                 ),
               ],
             ),
@@ -119,6 +145,74 @@ class _PantallaConfigState extends State<PantallaConfig> {
     await _preferencias.guardarBiometriaActiva(valor);
     if (!mounted) return;
     setState(() => _biometriaActiva = valor);
+  }
+
+  Future<void> _cambiarCodigo(bool valor) async {
+    if (!valor) {
+      await _preferencias.guardarCodigoRapido(
+        usuario: widget.usuario.usuario,
+        codigo: '',
+      );
+      if (mounted) setState(() => _codigoActivo = false);
+      return;
+    }
+
+    final codigo = await _pedirTexto(
+      titulo: 'Codigo rapido',
+      pista: '4 digitos',
+      icono: Icons.pin_outlined,
+      teclado: TextInputType.number,
+      maximo: 4,
+    );
+    if (codigo == null) return;
+    if (!RegExp(r'^\d{4}$').hasMatch(codigo)) {
+      _mostrarMensaje('El codigo debe tener 4 digitos.');
+      return;
+    }
+
+    await _preferencias.guardarCodigoRapido(
+      usuario: widget.usuario.usuario,
+      codigo: codigo,
+    );
+    if (mounted) setState(() => _codigoActivo = true);
+  }
+
+  Future<String?> _pedirTexto({
+    required String titulo,
+    required String pista,
+    required IconData icono,
+    required TextInputType teclado,
+    required int maximo,
+  }) async {
+    final controlador = TextEditingController();
+    final resultado = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(titulo),
+        content: TextField(
+          controller: controlador,
+          keyboardType: teclado,
+          maxLength: maximo,
+          obscureText: true,
+          decoration: InputDecoration(hintText: pista, prefixIcon: Icon(icono)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controlador.text.trim()),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    return resultado;
+  }
+
+  void _mostrarMensaje(String texto) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 }
 

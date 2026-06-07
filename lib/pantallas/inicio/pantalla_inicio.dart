@@ -18,13 +18,15 @@ class PantallaInicio extends StatefulWidget {
     required this.entradas,
     required this.gastos,
     required this.alCerrarSesion,
+    required this.alAbrirConfig,
   });
 
   final String usuario;
   final List<Movimiento> movimientos;
   final int entradas;
   final int gastos;
-  final VoidCallback alCerrarSesion;
+  final Future<void> Function() alCerrarSesion;
+  final VoidCallback alAbrirConfig;
 
   int get saldo => entradas - gastos;
 
@@ -51,7 +53,10 @@ class _PantallaInicioState extends State<PantallaInicio> {
               24,
             ),
             children: [
-              _BarraSuperior(alCerrarSesion: widget.alCerrarSesion),
+              _BarraSuperior(
+                alCerrarSesion: widget.alCerrarSesion,
+                alAbrirConfig: widget.alAbrirConfig,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Hola ${_nombreMostrable(widget.usuario)}',
@@ -102,8 +107,6 @@ class _PantallaInicioState extends State<PantallaInicio> {
                   movimientos: widget.movimientos,
                 ),
               ],
-              const SizedBox(height: 18),
-              _AccionesRapidas(ancho: ancho),
               const SizedBox(height: 22),
               _TituloSeccion(titulo: 'Ultimos movimientos'),
               const SizedBox(height: 12),
@@ -127,9 +130,13 @@ class _PantallaInicioState extends State<PantallaInicio> {
 }
 
 class _BarraSuperior extends StatelessWidget {
-  const _BarraSuperior({required this.alCerrarSesion});
+  const _BarraSuperior({
+    required this.alCerrarSesion,
+    required this.alAbrirConfig,
+  });
 
-  final VoidCallback alCerrarSesion;
+  final Future<void> Function() alCerrarSesion;
+  final VoidCallback alAbrirConfig;
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +144,9 @@ class _BarraSuperior extends StatelessWidget {
       children: [
         IconButton.filledTonal(
           tooltip: 'Salir',
-          onPressed: alCerrarSesion,
+          onPressed: () {
+            alCerrarSesion();
+          },
           icon: const Icon(Icons.logout),
         ),
         const Spacer(),
@@ -145,6 +154,12 @@ class _BarraSuperior extends StatelessWidget {
           tooltip: 'Notificaciones',
           onPressed: () {},
           icon: const Icon(Icons.notifications_none),
+        ),
+        const SizedBox(width: 8),
+        IconButton.filledTonal(
+          tooltip: 'Ajustes',
+          onPressed: alAbrirConfig,
+          icon: const Icon(Icons.tune_outlined),
         ),
       ],
     );
@@ -325,6 +340,7 @@ class _TarjetaResumen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resumen = _resumenCategorias(movimientos);
     return TarjetaSuave(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +355,7 @@ class _TarjetaResumen extends StatelessWidget {
                 children: [
                   CustomPaint(
                     size: const Size.square(150),
-                    painter: _PintorDona(gastos: gastos),
+                    painter: _PintorDona(resumen: resumen, total: gastos),
                   ),
                   Column(
                     mainAxisSize: MainAxisSize.min,
@@ -365,113 +381,42 @@ class _TarjetaResumen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          ...categoriasGasto.take(3).map((categoria) {
-            final monto = _gastadoPorCategoria(categoria.nombre, movimientos);
-            return _FilaCategoria(categoria: categoria, monto: monto);
-          }),
+          if (resumen.isEmpty)
+            const Text(
+              'Cargá tus gastos con el botón + y el pastel va a cobrar vida.',
+              style: TextStyle(
+                color: ColoresApp.textoSuave,
+                fontWeight: FontWeight.w800,
+              ),
+            )
+          else
+            ...resumen.take(5).map((item) => _FilaCategoria(item: item)),
         ],
       ),
     );
   }
 
-  int _gastadoPorCategoria(String nombre, List<Movimiento> movimientos) {
-    return movimientos
-        .where(
-          (movimiento) =>
-              movimiento.tipo == TipoMovimiento.gasto &&
-              movimiento.categoria == nombre,
-        )
-        .fold(0, (total, movimiento) => total + movimiento.monto);
-  }
-}
+  List<_ResumenCategoria> _resumenCategorias(List<Movimiento> movimientos) {
+    final montos = <String, int>{};
+    for (final movimiento in movimientos) {
+      if (movimiento.tipo != TipoMovimiento.gasto) continue;
+      montos.update(
+        movimiento.categoria,
+        (valor) => valor + movimiento.monto,
+        ifAbsent: () => movimiento.monto,
+      );
+    }
 
-class _AccionesRapidas extends StatelessWidget {
-  const _AccionesRapidas({required this.ancho});
+    final resumen = montos.entries.map((entry) {
+      final categoria = categoriasGasto.firstWhere(
+        (item) => item.nombre == entry.key,
+        orElse: () => categoriasGasto.last,
+      );
+      return _ResumenCategoria(categoria: categoria, monto: entry.value);
+    }).toList();
 
-  final double ancho;
-
-  @override
-  Widget build(BuildContext context) {
-    final columnas = ancho < 380 ? 2 : 4;
-    return GridView.count(
-      crossAxisCount: columnas,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: columnas == 2 ? 2.3 : 0.95,
-      children: const [
-        _AccionPastel(
-          titulo: 'Gasto',
-          icono: Icons.add_circle_outline,
-          fondo: ColoresApp.verdeSuave,
-          color: ColoresApp.verde,
-        ),
-        _AccionPastel(
-          titulo: 'Entrada',
-          icono: Icons.receipt_long_outlined,
-          fondo: ColoresApp.duraznoSuave,
-          color: ColoresApp.durazno,
-        ),
-        _AccionPastel(
-          titulo: 'Metas',
-          icono: Icons.flag_outlined,
-          fondo: ColoresApp.lilaSuave,
-          color: ColoresApp.lila,
-        ),
-        _AccionPastel(
-          titulo: 'Perrito',
-          icono: Icons.pets,
-          fondo: ColoresApp.amarilloSuave,
-          color: ColoresApp.amarillo,
-        ),
-      ],
-    );
-  }
-}
-
-class _AccionPastel extends StatelessWidget {
-  const _AccionPastel({
-    required this.titulo,
-    required this.icono,
-    required this.fondo,
-    required this.color,
-  });
-
-  final String titulo;
-  final IconData icono;
-  final Color fondo;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: fondo,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {},
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icono, color: color, size: 30),
-              const SizedBox(height: 7),
-              Text(
-                titulo,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: ColoresApp.tinta,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    resumen.sort((a, b) => b.monto.compareTo(a.monto));
+    return resumen;
   }
 }
 
@@ -582,14 +527,21 @@ class _FilaMovimiento extends StatelessWidget {
   }
 }
 
-class _FilaCategoria extends StatelessWidget {
-  const _FilaCategoria({required this.categoria, required this.monto});
+class _ResumenCategoria {
+  const _ResumenCategoria({required this.categoria, required this.monto});
 
   final CategoriaGasto categoria;
   final int monto;
+}
+
+class _FilaCategoria extends StatelessWidget {
+  const _FilaCategoria({required this.item});
+
+  final _ResumenCategoria item;
 
   @override
   Widget build(BuildContext context) {
+    final categoria = item.categoria;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Row(
@@ -603,7 +555,7 @@ class _FilaCategoria extends StatelessWidget {
             ),
           ),
           Text(
-            formatoGuaranies(monto),
+            formatoGuaranies(item.monto),
             style: const TextStyle(fontWeight: FontWeight.w900),
           ),
         ],
@@ -631,9 +583,10 @@ class _TituloSeccion extends StatelessWidget {
 }
 
 class _PintorDona extends CustomPainter {
-  _PintorDona({required this.gastos});
+  _PintorDona({required this.resumen, required this.total});
 
-  final int gastos;
+  final List<_ResumenCategoria> resumen;
+  final int total;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -645,34 +598,22 @@ class _PintorDona extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = trazo;
 
-    if (gastos <= 0) {
+    if (total <= 0 || resumen.isEmpty) {
       paint.color = ColoresApp.linea.withValues(alpha: 0.7);
       canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, paint);
       return;
     }
 
-    final colores = [
-      ColoresApp.verde,
-      ColoresApp.durazno,
-      ColoresApp.lila,
-      ColoresApp.amarillo,
-      ColoresApp.celeste,
-    ];
     var inicio = -math.pi / 2;
-    for (var i = 0; i < colores.length; i++) {
-      paint.color = colores[i];
-      canvas.drawArc(
-        rect,
-        inicio,
-        math.pi * 2 / colores.length - 0.04,
-        false,
-        paint,
-      );
-      inicio += math.pi * 2 / colores.length;
+    for (final item in resumen.take(8)) {
+      final angulo = math.pi * 2 * (item.monto / total);
+      paint.color = item.categoria.color;
+      canvas.drawArc(rect, inicio, math.max(0, angulo - 0.035), false, paint);
+      inicio += angulo;
     }
   }
 
   @override
   bool shouldRepaint(covariant _PintorDona oldDelegate) =>
-      oldDelegate.gastos != gastos;
+      oldDelegate.total != total || oldDelegate.resumen != resumen;
 }
