@@ -119,29 +119,37 @@ class _ControladorSesionState extends State<ControladorSesion> {
             }
           },
           alUsarBiometria: () async {
-            final biometriaActiva = await _preferencias
-                .obtenerBiometriaActiva();
-            if (!biometriaActiva) return false;
-            final ok = await _biometria.autenticar();
-            if (!ok) return false;
-            if (_autenticacion.usuarioActual != null) return true;
+            try {
+              if (_usuarioRecordado.trim().isEmpty) return false;
+              final biometriaActiva = await _preferencias
+                  .obtenerBiometriaActiva();
+              if (!biometriaActiva) return false;
+              final ok = await _biometria.autenticar();
+              if (!ok) return false;
+              if (_autenticacion.usuarioActual != null) return true;
 
-            final credenciales = await _preferencias.obtenerCredencialesRapidas(
-              usuario: _usuarioRecordado,
-            );
-            if (credenciales == null) return false;
-            await _autenticacion.ingresar(
-              usuario: credenciales.usuario,
-              clave: credenciales.clave,
-            );
-            return true;
+              final credenciales = await _preferencias
+                  .obtenerCredencialesRapidas(usuario: _usuarioRecordado);
+              if (credenciales == null) return false;
+              await _autenticacion.ingresar(
+                usuario: credenciales.usuario,
+                clave: credenciales.clave,
+              );
+              return true;
+            } catch (_) {
+              return false;
+            }
           },
           alUsarCodigo: (usuario, codigo) async {
-            final guardado = await _preferencias.obtenerCodigoRapido(
-              usuario: usuario,
-            );
-            if (guardado.isEmpty || guardado != codigo) return false;
-            return _entrarConAccesoRapido(usuario);
+            try {
+              final guardado = await _preferencias.obtenerCodigoRapido(
+                usuario: usuario,
+              );
+              if (guardado.isEmpty || guardado != codigo) return false;
+              return _entrarConAccesoRapido(usuario);
+            } catch (_) {
+              return false;
+            }
           },
         );
       },

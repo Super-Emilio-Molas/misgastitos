@@ -28,11 +28,13 @@ class PreferenciasSesion {
     required String usuario,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    final alias = _normalizarUsuario(usuario);
     await prefs.setBool(_claveRecordarme, activo);
-    if (activo) {
-      await prefs.setString(_claveUsuario, usuario.trim());
+    if (activo && alias.isNotEmpty) {
+      await prefs.setString(_claveUsuario, alias);
     } else {
       await prefs.remove(_claveUsuario);
+      if (alias.isNotEmpty) await borrarCredencialesRapidas(usuario: alias);
     }
   }
 
@@ -63,6 +65,12 @@ class PreferenciasSesion {
       return null;
     }
     return (usuario: alias, clave: clave);
+  }
+
+  Future<void> borrarCredencialesRapidas({required String usuario}) async {
+    final alias = _normalizarUsuario(usuario);
+    if (alias.isEmpty) return;
+    await _cajaSegura.delete(key: _claveClave(alias));
   }
 
   Future<void> guardarCodigoRapido({

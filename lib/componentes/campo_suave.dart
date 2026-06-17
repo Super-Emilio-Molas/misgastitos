@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../tema/colores_app.dart';
 
@@ -12,6 +13,11 @@ class CampoSuave extends StatelessWidget {
     this.esSecreto = false,
     this.accion,
     this.teclado,
+    this.textInputAction,
+    this.autofillHints,
+    this.inputFormatters,
+    this.activado = true,
+    this.alEnviar,
   });
 
   final TextEditingController controlador;
@@ -21,6 +27,11 @@ class CampoSuave extends StatelessWidget {
   final bool esSecreto;
   final Widget? accion;
   final TextInputType? teclado;
+  final TextInputAction? textInputAction;
+  final Iterable<String>? autofillHints;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool activado;
+  final ValueChanged<String>? alEnviar;
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +49,13 @@ class CampoSuave extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: controlador,
+          enabled: activado,
           obscureText: esSecreto,
           keyboardType: teclado,
+          textInputAction: textInputAction,
+          autofillHints: autofillHints,
+          inputFormatters: inputFormatters,
+          onSubmitted: alEnviar,
           decoration: InputDecoration(
             hintText: pista,
             hintStyle: const TextStyle(

@@ -69,6 +69,7 @@ void main() {
     await tester.enterText(find.byType(TextField).at(0), 'luz@gmail.com');
     await tester.enterText(find.byType(TextField).at(1), 'luz');
     await tester.enterText(find.byType(TextField).at(2), 'clave-segura-123');
+    await tester.enterText(find.byType(TextField).at(3), 'clave-segura-123');
     await tester.ensureVisible(
       find.widgetWithText(FilledButton, 'Crear cuenta'),
     );

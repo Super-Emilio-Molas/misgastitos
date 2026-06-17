@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../datos/catalogo_financiero.dart';
 import '../../modelos/categoria_gasto.dart';
@@ -142,6 +143,7 @@ class _PantallaFormularioMovimientoState
                         pista: 'Gs.',
                         icono: Icons.attach_money,
                         teclado: TextInputType.number,
+                        inputFormatters: const [_FormatoMontoInput()],
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -307,6 +309,7 @@ class _CampoFormulario extends StatelessWidget {
     required this.pista,
     required this.icono,
     this.teclado,
+    this.inputFormatters,
     this.maxLineas = 1,
   });
 
@@ -315,6 +318,7 @@ class _CampoFormulario extends StatelessWidget {
   final String pista;
   final IconData icono;
   final TextInputType? teclado;
+  final List<TextInputFormatter>? inputFormatters;
   final int maxLineas;
 
   @override
@@ -322,6 +326,7 @@ class _CampoFormulario extends StatelessWidget {
     return TextField(
       controller: controlador,
       keyboardType: teclado,
+      inputFormatters: inputFormatters,
       maxLines: maxLineas,
       scrollPadding: const EdgeInsets.only(bottom: 180),
       decoration: InputDecoration(
@@ -336,6 +341,32 @@ class _CampoFormulario extends StatelessWidget {
           borderSide: const BorderSide(color: ColoresApp.linea),
         ),
       ),
+    );
+  }
+}
+
+class _FormatoMontoInput extends TextInputFormatter {
+  const _FormatoMontoInput();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digitos = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitos.isEmpty) return const TextEditingValue();
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < digitos.length; i++) {
+      final desdeFinal = digitos.length - i;
+      buffer.write(digitos[i]);
+      if (desdeFinal > 1 && desdeFinal % 3 == 1) buffer.write('.');
+    }
+
+    final texto = buffer.toString();
+    return TextEditingValue(
+      text: texto,
+      selection: TextSelection.collapsed(offset: texto.length),
     );
   }
 }

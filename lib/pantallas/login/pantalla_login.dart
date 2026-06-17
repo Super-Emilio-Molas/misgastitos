@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../componentes/campo_suave.dart';
 import '../../componentes/fondo_huellitas.dart';
@@ -33,6 +34,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
   late final TextEditingController _usuario;
   final _correo = TextEditingController();
   final _contrasena = TextEditingController();
+  final _confirmarContrasena = TextEditingController();
   late bool _recordarme;
   bool _modoRegistro = false;
   bool _mostrarContrasena = false;
@@ -50,6 +52,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
     _usuario.dispose();
     _correo.dispose();
     _contrasena.dispose();
+    _confirmarContrasena.dispose();
     super.dispose();
   }
 
@@ -116,6 +119,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
                           correo: _correo,
                           usuario: _usuario,
                           contrasena: _contrasena,
+                          confirmarContrasena: _confirmarContrasena,
                           recordarme: _recordarme,
                           mostrarContrasena: _mostrarContrasena,
                           cargando: _cargando,
@@ -154,6 +158,13 @@ class _PantallaLoginState extends State<PantallaLogin> {
       return;
     }
 
+    final errorUsuario = _validarUsuario(usuario);
+    if (errorUsuario != null) {
+      _mostrarMensaje(errorUsuario);
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
     setState(() => _cargando = true);
     final error = await widget.alIngresar(_recordarme, usuario, clave);
     if (mounted) setState(() => _cargando = false);
@@ -166,17 +177,36 @@ class _PantallaLoginState extends State<PantallaLogin> {
     final correo = _correo.text.trim();
     final usuario = _usuario.text.trim();
     final clave = _contrasena.text;
+    final confirmacion = _confirmarContrasena.text;
 
     if (correo.isEmpty || usuario.isEmpty || clave.isEmpty) {
       _mostrarMensaje('Completa todos los datos.');
       return;
     }
 
-    if (!correo.contains('@')) {
+    if (!_correoValido(correo)) {
       _mostrarMensaje('Escribi un email valido.');
       return;
     }
 
+    final errorUsuario = _validarUsuario(usuario);
+    if (errorUsuario != null) {
+      _mostrarMensaje(errorUsuario);
+      return;
+    }
+
+    final errorClave = _validarContrasena(clave);
+    if (errorClave != null) {
+      _mostrarMensaje(errorClave);
+      return;
+    }
+
+    if (clave != confirmacion) {
+      _mostrarMensaje('Las contrasenas no coinciden.');
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
     setState(() => _cargando = true);
     final error = await widget.alRegistrar(correo, usuario, clave);
     if (mounted) setState(() => _cargando = false);
@@ -219,7 +249,10 @@ class _PantallaLoginState extends State<PantallaLogin> {
 
   void _cambiarModo(bool registro) {
     if (_cargando) return;
-    setState(() => _modoRegistro = registro);
+    setState(() {
+      _modoRegistro = registro;
+      _confirmarContrasena.clear();
+    });
   }
 
   void _mostrarMensaje(String texto) {
@@ -258,6 +291,36 @@ class _PantallaLoginState extends State<PantallaLogin> {
     );
     return resultado;
   }
+
+  bool _correoValido(String correo) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(correo.trim());
+  }
+
+  String? _validarUsuario(String usuario) {
+    final limpio = usuario.trim();
+    if (limpio.length < 3) {
+      return 'Tu usuario debe tener al menos 3 caracteres.';
+    }
+    if (limpio.length > 24) return 'Tu usuario no puede pasar 24 caracteres.';
+    if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(limpio)) {
+      return 'Usa solo letras, numeros, punto y guion bajo.';
+    }
+    if (limpio.startsWith('.') || limpio.endsWith('.')) {
+      return 'El usuario no puede empezar ni terminar con punto.';
+    }
+    if (limpio.contains('..')) {
+      return 'El usuario no puede tener dos puntos seguidos.';
+    }
+    return null;
+  }
+
+  String? _validarContrasena(String clave) {
+    if (clave.length < 8) return 'La contrasena necesita minimo 8 caracteres.';
+    if (!RegExp('[A-Za-z]').hasMatch(clave) || !RegExp(r'\d').hasMatch(clave)) {
+      return 'Usa letras y numeros en tu contrasena.';
+    }
+    return null;
+  }
 }
 
 class _PanelLogin extends StatelessWidget {
@@ -266,6 +329,7 @@ class _PanelLogin extends StatelessWidget {
     required this.correo,
     required this.usuario,
     required this.contrasena,
+    required this.confirmarContrasena,
     required this.recordarme,
     required this.mostrarContrasena,
     required this.cargando,
@@ -282,6 +346,7 @@ class _PanelLogin extends StatelessWidget {
   final TextEditingController correo;
   final TextEditingController usuario;
   final TextEditingController contrasena;
+  final TextEditingController confirmarContrasena;
   final bool recordarme;
   final bool mostrarContrasena;
   final bool cargando;
@@ -333,6 +398,9 @@ class _PanelLogin extends StatelessWidget {
                       pista: 'tuusuario@gmail.com',
                       icono: Icons.mail_outline,
                       teclado: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.email],
+                      activado: !cargando,
                     ),
                     const SizedBox(height: 14),
                   ],
@@ -342,6 +410,10 @@ class _PanelLogin extends StatelessWidget {
                     pista: 'Tu usuario',
                     icono: Icons.person_outline,
                     teclado: TextInputType.text,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.username],
+                    inputFormatters: const [_FormatoUsuarioInput()],
+                    activado: !cargando,
                   ),
                   const SizedBox(height: 14),
                   CampoSuave(
@@ -352,7 +424,19 @@ class _PanelLogin extends StatelessWidget {
                         : 'Tu contrasena',
                     icono: Icons.lock_outline,
                     teclado: TextInputType.visiblePassword,
+                    textInputAction: modoRegistro
+                        ? TextInputAction.next
+                        : TextInputAction.done,
+                    autofillHints: [
+                      modoRegistro
+                          ? AutofillHints.newPassword
+                          : AutofillHints.password,
+                    ],
+                    activado: !cargando,
                     esSecreto: !mostrarContrasena,
+                    alEnviar: (_) {
+                      if (!modoRegistro) alIngresar();
+                    },
                     accion: IconButton(
                       tooltip: mostrarContrasena
                           ? 'Ocultar contrasena'
@@ -366,6 +450,23 @@ class _PanelLogin extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (modoRegistro) ...[
+                    const SizedBox(height: 14),
+                    CampoSuave(
+                      controlador: confirmarContrasena,
+                      etiqueta: 'Confirmar contrasena',
+                      pista: 'Repeti tu contrasena',
+                      icono: Icons.verified_user_outlined,
+                      teclado: TextInputType.visiblePassword,
+                      textInputAction: TextInputAction.done,
+                      autofillHints: const [AutofillHints.newPassword],
+                      activado: !cargando,
+                      esSecreto: !mostrarContrasena,
+                      alEnviar: (_) => alRegistrar(),
+                    ),
+                    const SizedBox(height: 8),
+                    const _AyudaRegistro(),
+                  ],
                 ],
               ),
             ),
@@ -380,7 +481,9 @@ class _PanelLogin extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  onChanged: (valor) => alCambiarRecordarme(valor ?? false),
+                  onChanged: cargando
+                      ? null
+                      : (valor) => alCambiarRecordarme(valor ?? false),
                 ),
                 const Expanded(
                   child: Text(
@@ -420,7 +523,7 @@ class _PanelLogin extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: OutlinedButton.icon(
-                onPressed: alBiometria,
+                onPressed: cargando ? null : alBiometria,
                 icon: const Icon(Icons.fingerprint),
                 label: const Text('Entrar con biometria'),
                 style: OutlinedButton.styleFrom(
@@ -437,7 +540,7 @@ class _PanelLogin extends StatelessWidget {
               width: double.infinity,
               height: 46,
               child: OutlinedButton.icon(
-                onPressed: alCodigo,
+                onPressed: cargando ? null : alCodigo,
                 icon: const Icon(Icons.pin_outlined),
                 label: const Text('Entrar con codigo'),
               ),
@@ -445,6 +548,44 @@ class _PanelLogin extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _AyudaRegistro extends StatelessWidget {
+  const _AyudaRegistro();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        'El usuario es para entrar. El Gmail queda para tu cuenta y recuperacion.',
+        style: TextStyle(
+          color: ColoresApp.textoSuave,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _FormatoUsuarioInput extends TextInputFormatter {
+  const _FormatoUsuarioInput();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final texto = newValue.text.toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9._]'),
+      '',
+    );
+    return TextEditingValue(
+      text: texto,
+      selection: TextSelection.collapsed(offset: texto.length),
     );
   }
 }

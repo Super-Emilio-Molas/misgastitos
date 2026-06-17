@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 
 import '../../componentes/formato_dinero.dart';
 import '../../componentes/fondo_huellitas.dart';
@@ -41,9 +42,14 @@ class PantallaMovimientos extends StatelessWidget {
                 tooltip: 'Exportar PDF',
                 onPressed: movimientos.isEmpty
                     ? null
-                    : () => ExportadorMovimientosPdf().compartir(
-                        usuario: usuario,
-                        movimientos: movimientos,
+                    : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => _VistaPreviaPdf(
+                            usuario: usuario,
+                            movimientos: movimientos,
+                          ),
+                        ),
                       ),
                 icon: const Icon(Icons.picture_as_pdf_outlined),
               ),
@@ -102,6 +108,57 @@ class PantallaMovimientos extends StatelessWidget {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VistaPreviaPdf extends StatelessWidget {
+  const _VistaPreviaPdf({required this.usuario, required this.movimientos});
+
+  final String usuario;
+  final List<Movimiento> movimientos;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: ColoresApp.fondo,
+      appBar: AppBar(
+        title: const Text('Vista previa PDF'),
+        backgroundColor: ColoresApp.fondo,
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.88),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: ColoresApp.linea),
+            ),
+            child: const Text(
+              'Revisa tu reporte. Desde los botones de arriba podes guardar o compartir el PDF cuando este todo bien.',
+              style: TextStyle(
+                color: ColoresApp.textoSuave,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          Expanded(
+            child: PdfPreview(
+              canChangePageFormat: false,
+              canChangeOrientation: false,
+              canDebug: false,
+              pdfFileName: 'mis_gastitos_movimientos.pdf',
+              build: (format) => ExportadorMovimientosPdf().crearPdf(
+                usuario: usuario,
+                movimientos: movimientos,
+              ),
+            ),
+          ),
         ],
       ),
     );

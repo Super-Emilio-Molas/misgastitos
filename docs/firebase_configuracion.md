@@ -17,7 +17,7 @@ dart pub global activate flutterfire_cli
 5. Desde la raiz del proyecto ejecuta:
 
 ```powershell
-flutterfire configure --platforms=android --project=TU_PROJECT_ID
+flutterfire configure --platforms=android --project=TU_PROJECT_ID --android-package-name=com.emiliomolas.misgastitos
 ```
 
 Ese comando genera:

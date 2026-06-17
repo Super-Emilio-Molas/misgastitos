@@ -2,24 +2,12 @@ import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 
 import '../componentes/formato_dinero.dart';
 import '../modelos/movimiento.dart';
 
 class ExportadorMovimientosPdf {
-  Future<void> compartir({
-    required String usuario,
-    required List<Movimiento> movimientos,
-  }) async {
-    final bytes = await _crearPdf(usuario: usuario, movimientos: movimientos);
-    await Printing.sharePdf(
-      bytes: bytes,
-      filename: 'mis_gastitos_movimientos.pdf',
-    );
-  }
-
-  Future<Uint8List> _crearPdf({
+  Future<Uint8List> crearPdf({
     required String usuario,
     required List<Movimiento> movimientos,
   }) async {
@@ -38,12 +26,35 @@ class ExportadorMovimientosPdf {
           theme: pw.ThemeData.withFont(),
         ),
         build: (context) => [
-          pw.Text(
-            'Mis Gastitos',
-            style: pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold),
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(18),
+            decoration: pw.BoxDecoration(
+              color: const PdfColor.fromInt(0xFFFFF1DF),
+              borderRadius: pw.BorderRadius.circular(18),
+              border: pw.Border.all(color: const PdfColor.fromInt(0xFFE8DDD1)),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Mis Gastitos',
+                  style: pw.TextStyle(
+                    fontSize: 26,
+                    fontWeight: pw.FontWeight.bold,
+                    color: const PdfColor.fromInt(0xFF2B2119),
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Reporte de movimientos de $usuario',
+                  style: const pw.TextStyle(
+                    color: PdfColor.fromInt(0xFF85796E),
+                  ),
+                ),
+              ],
+            ),
           ),
-          pw.SizedBox(height: 4),
-          pw.Text('Movimientos de $usuario'),
           pw.SizedBox(height: 18),
           pw.Row(
             children: [
@@ -63,7 +74,10 @@ class ExportadorMovimientosPdf {
                 color: PdfColor.fromInt(0xFFEAF5E7),
               ),
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-              cellStyle: const pw.TextStyle(fontSize: 9),
+              cellStyle: const pw.TextStyle(fontSize: 8.8),
+              oddRowDecoration: const pw.BoxDecoration(
+                color: PdfColor.fromInt(0xFFFFFBF5),
+              ),
               cellAlignment: pw.Alignment.centerLeft,
               headers: const [
                 'Fecha',

@@ -142,71 +142,144 @@ class _BarraInferiorPastel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x16000000),
-            blurRadius: 20,
-            offset: Offset(0, -8),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(14, 8, 14, bottom + 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: _ItemBarra(
-                activo: indice == 0,
-                icono: Icons.home_outlined,
-                iconoActivo: Icons.home,
-                texto: 'Inicio',
-                alTocar: () => alCambiar(0),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Tooltip(
-                message: 'Agregar movimiento',
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: alAgregar,
-                  child: Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.green.shade600,
-                      border: Border.all(color: Colors.white, width: 5),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 16,
-                          offset: Offset(0, 8),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18, 0, 18, bottom + 10),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 430),
+          child: SizedBox(
+            height: 90,
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: PhysicalShape(
+                    color: Colors.white,
+                    elevation: 10,
+                    shadowColor: const Color(0x245C6B8A),
+                    clipper: const _RecorteBarraCentral(),
+                    child: SizedBox(
+                      height: 70,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 4, 18, 6),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _ItemBarra(
+                                activo: indice == 0,
+                                icono: Icons.home_outlined,
+                                iconoActivo: Icons.home,
+                                texto: 'Inicio',
+                                alTocar: () => alCambiar(0),
+                              ),
+                            ),
+                            const SizedBox(width: 98),
+                            Expanded(
+                              child: _ItemBarra(
+                                activo: indice == 1,
+                                icono: Icons.receipt_long_outlined,
+                                iconoActivo: Icons.receipt_long,
+                                texto: 'Movimientos',
+                                alTocar: () => alCambiar(1),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 34),
                   ),
                 ),
-              ),
+                Positioned(
+                  top: 0,
+                  child: Tooltip(
+                    message: 'Agregar movimiento',
+                    child: Material(
+                      color: Colors.transparent,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: alAgregar,
+                        child: Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF76A866), Color(0xFF436B39)],
+                            ),
+                            border: Border.all(
+                              color: const Color(0xFFF8FAF4),
+                              width: 5,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x4076A866),
+                                blurRadius: 26,
+                                offset: Offset(0, 12),
+                              ),
+                              BoxShadow(
+                                color: Color(0x24F6CA5C),
+                                blurRadius: 18,
+                                offset: Offset(-8, 6),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 34,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: _ItemBarra(
-                activo: indice == 1,
-                icono: Icons.receipt_long_outlined,
-                iconoActivo: Icons.receipt_long,
-                texto: 'Movimientos',
-                alTocar: () => alCambiar(1),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _RecorteBarraCentral extends CustomClipper<Path> {
+  const _RecorteBarraCentral();
+
+  @override
+  Path getClip(Size size) {
+    final ancho = size.width;
+    final alto = size.height;
+    final centro = ancho / 2;
+    const radio = 30.0;
+    final hueco = ancho < 360 ? 46.0 : 54.0;
+    const profundidad = 24.0;
+
+    return Path()
+      ..moveTo(radio, 0)
+      ..lineTo(centro - hueco, 0)
+      ..cubicTo(centro - 34, 0, centro - 34, profundidad, centro, profundidad)
+      ..cubicTo(centro + 34, profundidad, centro + 34, 0, centro + hueco, 0)
+      ..lineTo(ancho - radio, 0)
+      ..quadraticBezierTo(ancho, 0, ancho, radio)
+      ..lineTo(ancho, alto - radio)
+      ..quadraticBezierTo(ancho, alto, ancho - radio, alto)
+      ..lineTo(radio, alto)
+      ..quadraticBezierTo(0, alto, 0, alto - radio)
+      ..lineTo(0, radio)
+      ..quadraticBezierTo(0, 0, radio, 0)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _RecorteBarraCentral oldClipper) => false;
 }
 
 class _ItemBarra extends StatelessWidget {
@@ -231,26 +304,25 @@ class _ItemBarra extends StatelessWidget {
       onTap: alTocar,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        decoration: BoxDecoration(
-          color: activo ? const Color(0xFFEAF5E7) : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+        decoration: const BoxDecoration(color: Colors.transparent),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.max,
           children: [
             Icon(
               activo ? iconoActivo : icono,
-              color: activo ? Colors.green.shade700 : const Color(0xFF56514D),
+              size: 22,
+              color: activo ? Colors.green.shade700 : const Color(0xFF8A8898),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Text(
               texto,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
-                color: activo ? Colors.green.shade800 : const Color(0xFF56514D),
+                fontSize: 9,
+                color: activo ? Colors.green.shade800 : const Color(0xFF6D6978),
                 fontWeight: FontWeight.w900,
               ),
             ),

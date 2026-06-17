@@ -46,6 +46,7 @@ class ServicioAutenticacionFirebase implements ServicioAutenticacion {
     required String usuario,
     required String clave,
   }) async {
+    _validarUsuario(_normalizarUsuario(usuario));
     final correo = await _resolverCorreo(usuario);
     final credencial = await _auth.signInWithEmailAndPassword(
       email: correo,
@@ -68,55 +69,100 @@ class ServicioAutenticacionFirebase implements ServicioAutenticacion {
     required String clave,
   }) async {
     final alias = _normalizarUsuario(usuario);
+    final correoLimpio = correo.trim().toLowerCase();
     _validarUsuario(alias);
 
     final aliasRef = _firestore.collection('usuarios_alias').doc(alias);
-    final aliasExistente = await aliasRef.get();
-    if (aliasExistente.exists) {
-      throw FirebaseAuthException(
-        code: 'usuario-en-uso',
-        message: 'Ese usuario ya esta usado.',
-      );
-    }
+    await _reservarAlias(aliasRef, alias, correoLimpio);
 
     User? userCreado;
-    final credencial = await _auth.createUserWithEmailAndPassword(
-      email: correo.trim(),
-      password: clave,
-    );
-    final user = credencial.user;
-    userCreado = user;
-    if (user == null) {
-      throw FirebaseAuthException(
-        code: 'sin-usuario',
-        message: 'No se pudo crear tu cuenta.',
-      );
-    }
-
     try {
+      final credencial = await _auth.createUserWithEmailAndPassword(
+        email: correoLimpio,
+        password: clave,
+      );
+      final user = credencial.user;
+      userCreado = user;
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'sin-usuario',
+          message: 'No se pudo crear tu cuenta.',
+        );
+      }
+
       await user.updateDisplayName(alias);
       await _guardarPerfil(
         uid: user.uid,
         nombre: alias,
-        correo: correo.trim(),
+        correo: correoLimpio,
         usuario: alias,
         aliasRef: aliasRef,
       );
+
+      return UsuarioSesion(
+        uid: user.uid,
+        usuario: alias,
+        nombre: _capitalizar(alias),
+        correo: correoLimpio,
+      );
     } catch (error) {
+      await _liberarAliasReservado(aliasRef, alias);
       await userCreado?.delete();
       rethrow;
     }
-
-    return UsuarioSesion(
-      uid: user.uid,
-      usuario: alias,
-      nombre: _capitalizar(alias),
-      correo: correo.trim(),
-    );
   }
 
   @override
   Future<void> cerrarSesion() => _auth.signOut();
+
+  Future<void> _reservarAlias(
+    DocumentReference<Map<String, dynamic>> aliasRef,
+    String alias,
+    String correo,
+  ) async {
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final existente = await transaction.get(aliasRef);
+        if (existente.exists) {
+          throw FirebaseAuthException(
+            code: 'usuario-en-uso',
+            message: 'Ese usuario ya esta usado.',
+          );
+        }
+        transaction.set(aliasRef, {
+          'usuario': alias,
+          'correo': correo,
+          'estado': 'reservado',
+          'creadoEn': FieldValue.serverTimestamp(),
+        });
+      });
+    } on FirebaseAuthException {
+      rethrow;
+    } on FirebaseException catch (error) {
+      if (error.code == 'already-exists' || error.code == 'aborted') {
+        throw FirebaseAuthException(
+          code: 'usuario-en-uso',
+          message: 'Ese usuario ya esta usado.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _liberarAliasReservado(
+    DocumentReference<Map<String, dynamic>> aliasRef,
+    String alias,
+  ) async {
+    try {
+      final doc = await aliasRef.get();
+      final datos = doc.data();
+      if (datos?['estado'] == 'reservado' && datos?['usuario'] == alias) {
+        await aliasRef.delete();
+      }
+    } catch (_) {
+      // La limpieza es defensiva; el error original es mas importante.
+    }
+  }
 
   Future<String> _resolverCorreo(String usuario) async {
     final alias = _normalizarUsuario(usuario);
@@ -160,7 +206,9 @@ class ServicioAutenticacionFirebase implements ServicioAutenticacion {
       'uid': uid,
       'correo': correo,
       'usuario': usuario,
+      'estado': 'activo',
       'creadoEn': ahora,
+      'actualizadoEn': ahora,
     });
 
     await batch.commit();
@@ -177,6 +225,12 @@ class ServicioAutenticacionFirebase implements ServicioAutenticacion {
         message: 'El usuario debe tener al menos 3 caracteres.',
       );
     }
+    if (usuario.length > 24) {
+      throw FirebaseAuthException(
+        code: 'usuario-largo',
+        message: 'El usuario no puede pasar 24 caracteres.',
+      );
+    }
 
     final permitido = RegExp(r'^[a-z0-9._]+$');
     if (!permitido.hasMatch(usuario)) {
@@ -184,6 +238,15 @@ class ServicioAutenticacionFirebase implements ServicioAutenticacion {
         code: 'usuario-invalido',
         message:
             'El usuario solo puede usar letras, numeros, punto y guion bajo.',
+      );
+    }
+
+    if (usuario.startsWith('.') ||
+        usuario.endsWith('.') ||
+        usuario.contains('..')) {
+      throw FirebaseAuthException(
+        code: 'usuario-invalido',
+        message: 'El usuario no puede empezar o terminar con punto.',
       );
     }
   }
@@ -255,6 +318,7 @@ String mensajeErrorAutenticacion(Object error) {
     'email-already-in-use' => 'Ese correo ya tiene una cuenta.',
     'weak-password' => 'La contrasena necesita al menos 6 caracteres.',
     'usuario-corto' => 'Tu usuario debe tener al menos 3 caracteres.',
+    'usuario-largo' => 'Tu usuario no puede pasar 24 caracteres.',
     'usuario-invalido' =>
       'Tu usuario solo puede tener letras, numeros, punto y guion bajo.',
     'usuario-en-uso' => 'Ese usuario ya esta usado. Proba con otro.',

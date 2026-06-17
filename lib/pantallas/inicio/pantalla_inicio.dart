@@ -596,7 +596,8 @@ class _PintorDona extends CustomPainter {
         Size(size.width - trazo, size.height - trazo);
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = trazo;
+      ..strokeWidth = trazo
+      ..strokeCap = StrokeCap.butt;
 
     if (total <= 0 || resumen.isEmpty) {
       paint.color = ColoresApp.linea.withValues(alpha: 0.7);
@@ -604,11 +605,23 @@ class _PintorDona extends CustomPainter {
       return;
     }
 
+    final separador = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = trazo + 3
+      ..color = Colors.white;
+    canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, separador);
+
     var inicio = -math.pi / 2;
     for (final item in resumen.take(8)) {
       final angulo = math.pi * 2 * (item.monto / total);
       paint.color = item.categoria.color;
-      canvas.drawArc(rect, inicio, math.max(0, angulo - 0.035), false, paint);
+      canvas.drawArc(
+        rect,
+        inicio + 0.025,
+        math.max(0, angulo - 0.075),
+        false,
+        paint,
+      );
       inicio += angulo;
     }
   }
